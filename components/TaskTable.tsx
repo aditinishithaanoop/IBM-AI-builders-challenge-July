@@ -193,6 +193,12 @@ export default function TaskTable() {
           >
             {prioritizing ? 'Ranking…' : 'Rank Backlog'}
           </button>
+          <button
+            onClick={() => { setOpen(true); setError(null); }}
+            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
+          >
+            + Add Task
+          </button>
         </div>
       </div>
 
