@@ -24,3 +24,18 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Force legible black-on-white output when printing, regardless of the
+   viewer's OS dark-mode setting — printers/PDF export drop most background
+   colors by default, so without this, dark-mode text colors can end up
+   unreadable on the printed page. */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #171717 !important;
+  }
+  * {
+    color: #171717 !important;
+    background-color: transparent !important;
+  }
+}
