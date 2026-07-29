@@ -3,6 +3,7 @@
 import React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Task, TaskScore, TaskStatus, TaskSource } from '@/types/task';
+import { ErrorBanner, EmptyState } from '@/components/StatusMessage';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -10,10 +11,22 @@ const STATUSES: TaskStatus[] = ['todo', 'in-progress', 'done', 'blocked'];
 const SCORES: TaskScore[] = [1, 2, 3, 4, 5];
 
 const STATUS_BADGE: Record<TaskStatus, string> = {
-  'todo':        'bg-zinc-200 text-zinc-600',
-  'in-progress': 'bg-blue-200 text-blue-900',
-  'done':        'bg-lime-200 text-green-800',
-  'blocked':     'bg-red-200 text-red-800'
+  'todo':        'bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300',
+  'in-progress': 'bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200',
+  'done':        'bg-lime-200 text-green-800 dark:bg-green-900 dark:text-green-200',
+  'blocked':     'bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200'
+};
+
+const SOURCE_BADGE: Record<TaskSource, string> = {
+  manual:   '',
+  meeting:  'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200',
+  proposal: 'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-200',
+};
+
+const SOURCE_LABEL: Record<TaskSource, string> = {
+  manual:   '',
+  meeting:  'Meeting',
+  proposal: 'Proposal',
 };
 
 const COLS = ['Rank', 'Title', 'Status', 'Assigned To', 'Deadline', 'Effort', 'Impact'] as const;
@@ -181,89 +194,102 @@ export default function TaskTable() {
     <div className="w-full">
       {/* header row */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-zinc-900">Tasks</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tasks</h2>
         <div className="flex items-center gap-3">
-          {prioritizeError && (
-            <span className="text-xs text-red-600">{prioritizeError}</span>
-          )}
           <button
             onClick={handlePrioritize}
             disabled={prioritizing || tasks.length === 0}
-            className="rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-200 disabled:opacity-50 transition-colors"
+            className="rounded-md bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
           >
             {prioritizing ? 'Ranking…' : 'Rank Backlog'}
           </button>
+          <button
+            onClick={() => { setOpen(true); setError(null); }}
+            className="rounded-md bg-zinc-900 dark:bg-zinc-100 px-3 py-1.5 text-sm font-medium text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors"
+          >
+            + Add Task
+          </button>
         </div>
       </div>
+      {prioritizeError && <div className="mb-4"><ErrorBanner message={prioritizeError} /></div>}
 
       {/* table */}
-      <div className="overflow-x-auto rounded-lg border border-zinc-200">
+      <div className="overflow-x-auto scrollbar-thumb-zinc-700 scrollbar-track-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
         <table className="min-w-full text-sm text-left table-fixed">
-          <thead className="bg-zinc-50 text-xs font-medium text-zinc-500 uppercase tracking-wide">
+          <thead className="bg-zinc-50 dark:bg-zinc-900 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
             <tr>
               {COLS.map((col) => (
                 <th key={col} className="px-4 py-3 whitespace-nowrap">{col}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 bg-white">
+          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 bg-white dark:bg-zinc-950">
             {loading ? (
               <tr>
-                <td colSpan={COLS.length} className="px-4 py-8 text-center text-zinc-400">
+                <td colSpan={COLS.length} className="px-4 py-8 text-center text-zinc-400 dark:text-zinc-500">
                   Loading…
                 </td>
               </tr>
             ) : tasks.length === 0 ? (
               <tr>
-                <td colSpan={COLS.length} className="px-4 py-8 text-center text-zinc-400">
-                  No tasks yet — add one above.
+                <td colSpan={COLS.length} className="p-0">
+                  <EmptyState message="No tasks yet - add one above." />
                 </td>
               </tr>
             ) : (
               sortedTasks.map((t) => (
                 <React.Fragment key={t.id}>
                   <tr
-                    className="hover:bg-zinc-50 transition-colors cursor-pointer"
+                    className="hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
                     onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
                   >
-                    <td className="px-4 py-3 text-zinc-500 font-medium">{t.rank ?? '—'}</td>
-                    <td className="px-4 py-3 font-medium text-zinc-900 max-w-xs truncate">{t.title}</td>
+                    <td className="px-4 py-3 text-zinc-500 dark:text-zinc-400 font-medium">{t.rank ?? '—'}</td>
+                    <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100 max-w-xs">
+                       <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate">{t.title}</span>
+                        {t.source !== 'manual' && (
+                          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${SOURCE_BADGE[t.source]}`}>
+                            {SOURCE_LABEL[t.source]}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[t.status]}`}>
                         {t.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-zinc-600">{t.assignedTo?.join(', ') || '—'}</td>
-                    <td className="px-4 py-3 text-zinc-600 whitespace-nowrap">
+                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">{t.assignedTo?.join(', ') || '—'}</td>
+                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
                       {t.deadline ? `${t.deadline}${t.deadlineTime ? ' ' + t.deadlineTime : ''}` : '—'}
                     </td>
-                    <td className="px-4 py-3 text-zinc-400 tracking-tighter">{dots(t.effort)}</td>
-                    <td className="px-4 py-3 text-zinc-400 tracking-tighter">{dots(t.impact)}</td>
+                    <td className="px-4 py-3 text-zinc-400 dark:text-zinc-600 tracking-tighter">{dots(t.effort)}</td>
+                    <td className="px-4 py-3 text-zinc-400 dark:text-zinc-600 tracking-tighter">{dots(t.impact)}</td>
                   </tr>
                   {expandedId === t.id && (
                     <tr>
-                      <td colSpan={COLS.length} className="px-4 py-3 bg-zinc-50">
+                      <td colSpan={COLS.length} className="px-4 py-3 bg-zinc-50 dark:bg-zinc-900">
                         <div className="flex flex-col gap-2">
                           {t.description && (
-                            <div className="max-w-2xl text-xs text-zinc-600 whitespace-normal break-words">
+                            <div className="max-w-2xl text-xs text-zinc-600 dark:text-zinc-400 whitespace-normal break-words">
                               {t.description}
                             </div>
                           )}
                           {t.reasoning && (
-                            <div className="max-w-2xl text-xs text-zinc-500 italic whitespace-normal break-words">
+                            <div className="max-w-2xl text-xs text-zinc-500 dark:text-zinc-500 italic whitespace-normal break-words">
                               Reasoning: {t.reasoning}
                             </div>
                           )}
                           <div className="flex justify-end gap-3">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleEditClick(t); }}
-                              className="text-xs text-zinc-500 hover:text-zinc-900"
+                              className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                             >
                               Edit
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDelete(t.id); }}
-                              className="text-xs text-red-500 hover:text-red-700"
+                              className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                             >
                               Delete
                             </button>
@@ -282,33 +308,33 @@ export default function TaskTable() {
       {/* modal */}
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/50"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
-          <div className="w-full max-w-md rounded-xl bg-white shadow-xl p-6">
-            <h3 className="text-base font-semibold text-zinc-900 mb-4">
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-zinc-900 shadow-xl p-6">
+            <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
               {editingId ? 'Edit Task' : 'New Task'}
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-3">
               {/* title */}
               <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Title <span className="text-red-400">*</span></label>
+                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Title <span className="text-red-400">*</span></label>
                 <input
                   ref={firstField}
                   required
                   {...field('title')}
                   placeholder="e.g. Migrate authentication"
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-600 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                  className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
                 />
               </div>
 
               {/* status */}
               <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Status <span className="text-red-400">*</span></label>
+                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Status <span className="text-red-400">*</span></label>
                 <select
                   {...field('status')}
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-600 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                  className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
                 >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>{s}</option>
@@ -317,23 +343,23 @@ export default function TaskTable() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Assigned To</label>
+                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Assigned To</label>
                 <input
                   {...field('assignedTo')}
                   placeholder="e.g. Alice, Bob"
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                  className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Deadline</label>
+                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Deadline</label>
                   <input type="date" 
                     {...field('deadline')} 
-                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500" />
+                    className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500" />
                 </div>
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 mb-1">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
                     <input
                       type="checkbox"
                       checked={form.includeTime}
@@ -344,7 +370,7 @@ export default function TaskTable() {
                   {form.includeTime && (
                     <input type="time" 
                       {...field('deadlineTime')} 
-                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500" />
+                      className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500" />
                   )}
                 </div>
               </div>
@@ -352,20 +378,20 @@ export default function TaskTable() {
               {/* effort + impact side by side */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Effort (1–5)</label>
+                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Effort (1–5)</label>
                   <select
                     {...field('effort')}
-                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-600 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                    className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
                   >
                     <option value="">—</option>
                     {SCORES.map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Impact (1–5)</label>
+                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Impact (1–5)</label>
                   <select
                     {...field('impact')}
-                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-600 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                    className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-300 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
                   >
                     <option value="">—</option>
                     {SCORES.map((n) => <option key={n} value={n}>{n}</option>)}
@@ -374,30 +400,28 @@ export default function TaskTable() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Description</label>
+                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Description</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={2}
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                  className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
                 />
               </div>
 
               {/* error */}
-              {error && (
-                <p className="text-xs text-red-600">{error}</p>
-              )}
+              {error && <ErrorBanner message={error} />}
 
               {/* actions */}
               <div className="flex justify-end gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => {setOpen(false); setEditingId(null);}}
-                  className="rounded-md bg-zinc-100 px-3 py-2 text-sm text-zinc-900 hover:bg-zinc-200 transition-colors"
+                  className="rounded-md bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 >
                   Cancel
                 </button>
-                <button type="submit" disabled={submitting} className="rounded-md bg-zinc-700 px-3 py-2 text-sm text-zinc-50 hover:bg-zinc-900 transition-colors">
+                <button type="submit" disabled={submitting} className="rounded-md bg-zinc-700 dark:bg-zinc-200 px-3 py-2 text-sm text-zinc-50 dark:text-zinc-900 hover:bg-zinc-900 dark:hover:bg-zinc-400 transition-colors">
                   {submitting ? 'Saving…' : editingId ? 'Update Task' : 'Save Task'}
                 </button>
               </div>

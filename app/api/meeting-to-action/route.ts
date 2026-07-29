@@ -96,5 +96,5 @@ ${body.transcript}
     created.push(task);
   }
 
-  return Response.json({ created, skippedCount: skipped.length });
+  return Response.json({ created, skipped });
 }
