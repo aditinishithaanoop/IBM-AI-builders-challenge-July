@@ -1,41 +1,139 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light dark;
+  --background: #FAF8F5;
+  --foreground: #2B2A33;
+  --surface: #FFFFFF;
+  --border-color: #cdcac3;
+  --muted-foreground: #8A8790;
+
+  --brand: #7F77DD;
+  --brand-hover: #6A61C7;
+
+  --hue-proposal: #b8467b;
+  --hue-meeting: #d87300;
+  --hue-manual: #ABA8A0;
+
+  --status-todo: #8162ce;
+  --status-progress: #4facc9;
+  --status-done: #009f32;
+  --status-blocked: #d50101;
+
+  --warning: #e0962f;
+  --danger: #e07251;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border-color);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+
+  --color-proposal: var(--hue-proposal);
+  --color-meeting: var(--hue-meeting);
+  --color-manual: var(--hue-manual);
+
+  --color-status-todo: var(--status-todo);
+  --color-status-progress: var(--status-progress);
+  --color-status-done: var(--status-done);
+  --color-status-blocked: var(--status-blocked);
+
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-space-grotesk);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #201E29;
+    --foreground: #EDEBF2;
+    --surface: #2A2836;
+    --border-color: #706b7f;
+    --muted-foreground: #9996a4;
+
+    --brand: #bdb5ff;
+    --brand-hover: #7668ce;
+
+    --hue-proposal: #d07538;
+    --hue-meeting: #d36dc0;
+    --hue-manual: #726F7D;
+
+    --status-todo: #bda3ff;
+    --status-progress: #92c9ff;
+    --status-done: #75e9a7;
+    --status-blocked: #f88475;
+
+    --warning: #E6BA7E;
+    --danger: #E9A188;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /*font-family: Arial, Helvetica, sans-serif;*/
 }
+
+@layer components {
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+}
+
+@layer utilities {
+  .themed-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--brand) 50%, transparent) transparent;
+  }
+  .themed-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  .themed-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .themed-scrollbar::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--brand) 50%, transparent);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .themed-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--brand-hover) 80%, transparent);
+  }
+
+  .bg-dot-grid {
+    background-image: radial-gradient(currentColor 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+  .fade-edges-x {
+    mask-image: linear-gradient(to right, black 0%, transparent 42%, transparent 58%, black 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0%, transparent 42%, transparent 58%, black 100%);
+  }
+}
+
 
 /* Force legible black-on-white output when printing, regardless of the
    viewer's OS dark-mode setting — printers/PDF export drop most background
    colors by default, so without this, dark-mode text colors can end up
    unreadable on the printed page. */
+
 @media print {
-  html, body {
-    background: #ffffff !important;
-    color: #171717 !important;
-  }
-  * {
-    color: #171717 !important;
-    background-color: transparent !important;
+  :root { color-scheme: light; }
+  *{
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

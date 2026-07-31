@@ -2,9 +2,12 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { getTasks } from '@/lib/tasks';
 import type { ProposalAnalysis } from '@/types/task';
 
-
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+// POST /api/proposal-analysis
+// Accepts { proposalText, projectContext? } → asks Gemini to analyse the proposal
+// against the current backlog → returns a ProposalAnalysis (does NOT create tasks;
+// that is a separate step via POST /api/proposal-to-tasks).
 export async function POST(request: Request): Promise<Response> {
   const body = await request.json() as { proposalText?: string; projectContext?: string };
 
@@ -12,8 +15,9 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'proposalText is required' }, { status: 400 });
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0]; // anchor for resolving relative dates
 
+  // Give the model awareness of what's already in flight so it avoids duplicates
   const currentBacklog = getTasks().map((t) => ({
     title: t.title,
     status: t.status,
@@ -85,13 +89,15 @@ ${body.proposalText}
     return Response.json({ error: 'Failed to parse AI response' }, { status: 502 });
   }
 
+  // Guard against occasional model outputs where a field contains a runaway
+  // repetition loop — long text or low word-diversity ratio signals degenerate output
   function looksDegenerate(text: string | undefined): boolean {
     if (!text) return false;
     if (text.length > 400) return true; // no legitimate title/description should be this long
     const words = text.toLowerCase().split(/\s+/).filter(Boolean);
     if (words.length < 20) return false;
     const uniqueRatio = new Set(words).size / words.length;
-    return uniqueRatio < 0.35; // heavy repetition = low word diversity
+    return uniqueRatio < 0.35; // heavy repetition → low word diversity
   }
   const cleanTasks = (analysis.proposedTasks ?? []).filter(
     (t) => !looksDegenerate(t.title) && !looksDegenerate(t.description)

@@ -1,0 +1,121 @@
+WEBVTT
+
+1
+00:00:03.000 --> 00:00:08.500
+<v Sarah Chen>Alright, let's get started. Today is the sprint planning for the Orion platform relaunch.</v>
+
+2
+00:00:08.800 --> 00:00:15.200
+<v Sarah Chen>We have four weeks until the public launch deadline on the 31st of August, so we need to be tight on assignments.</v>
+
+3
+00:00:15.600 --> 00:00:22.000
+<v Marcus Webb>Before we dive in — I want to flag that the authentication migration is still blocked. I'm waiting on the security audit report from the compliance team.</v>
+
+4
+00:00:22.400 --> 00:00:29.800
+<v Sarah Chen>Got it. Marcus, can you chase the compliance team today and get a confirmed date? Let's say by end of this week — so by Friday.</v>
+
+5
+00:00:30.100 --> 00:00:33.500
+<v Marcus Webb>Sure, I'll send them a message this morning.</v>
+
+6
+00:00:33.800 --> 00:00:42.000
+<v Priya Nair>On the front-end side — I've started on the new dashboard layout, but I still need the final design tokens from the design team. Leila, is that something you can get to us?</v>
+
+7
+00:00:42.300 --> 00:00:49.500
+<v Leila Hassan>Yes. I'll export the Figma token file and share it in the #design channel by tomorrow at noon.</v>
+
+8
+00:00:49.800 --> 00:00:57.200
+<v Priya Nair>Perfect. Once I have those I can finish the dashboard implementation. I'd say dashboard UI done by August 8th is realistic.</v>
+
+9
+00:00:57.600 --> 00:01:06.000
+<v Sarah Chen>Let's lock that in. Priya, you own the dashboard implementation, deadline August 8th. Leila, design token export by tomorrow — that's July 18th — by 12:00.</v>
+
+10
+00:01:06.400 --> 00:01:14.800
+<v Tom Adeyemi>I've been working on the API rate-limiting feature. It's in progress but I've found a performance regression in the test suite. I need to fix that before I can merge.</v>
+
+11
+00:01:15.100 --> 00:01:22.500
+<v Sarah Chen>Okay, Tom, make the rate-limit performance fix your top priority. Can you get it resolved by July 21st?</v>
+
+12
+00:01:22.800 --> 00:01:26.000
+<v Tom Adeyemi>That should be doable. I'll aim for end of day July 21st.</v>
+
+13
+00:01:26.300 --> 00:01:35.700
+<v Marcus Webb>We also still need to write the migration runbook for the database schema changes. That's a joint piece — Tom and I should probably pair on it.</v>
+
+14
+00:01:36.000 --> 00:01:43.200
+<v Sarah Chen>Agreed. Marcus and Tom, co-own the migration runbook. It needs to be done before the launch rehearsal, so let's say July 28th.</v>
+
+15
+00:01:43.500 --> 00:01:51.800
+<v Priya Nair>There's also the accessibility audit that got pushed from last sprint. Legal has told us it's a blocker for the EU market. We really can't skip it.</v>
+
+16
+00:01:52.100 --> 00:01:59.500
+<v Sarah Chen>You're right. Priya, can you own the accessibility audit and coordinate with the external auditor? We need the report back by August 5th.</v>
+
+17
+00:01:59.800 --> 00:02:04.000
+<v Priya Nair>I'll reach out to Inclusiv Consulting today and book the session.</v>
+
+18
+00:02:04.300 --> 00:02:13.700
+<v Leila Hassan>One more thing — the onboarding email sequence still uses the old brand. Someone needs to update the copy and swap the logo assets before launch.</v>
+
+19
+00:02:14.000 --> 00:02:22.400
+<v Sarah Chen>Good catch. Leila, add that to your plate — update onboarding email templates with new branding. Deadline end of July, so July 31st.</v>
+
+20
+00:02:22.700 --> 00:02:28.100
+<v Tom Adeyemi>Should we also set up the feature flag system before we start rolling out to beta users? Otherwise we have no kill switch.</v>
+
+21
+00:02:28.400 --> 00:02:36.800
+<v Sarah Chen>Absolutely, that's critical. Tom, set up the feature flag infrastructure. We need that done by July 24th so beta can start on the 25th.</v>
+
+22
+00:02:37.100 --> 00:02:44.500
+<v Marcus Webb>I can also handle writing the internal release notes for the engineering team. I'll do that in parallel — targeting July 25th.</v>
+
+23
+00:02:44.800 --> 00:02:52.200
+<v Sarah Chen>Great. Let me just recap what we've agreed: Marcus chases the security audit today, Marcus and Tom write the migration runbook by the 28th, Marcus writes release notes by the 25th.</v>
+
+24
+00:02:52.500 --> 00:03:01.000
+<v Sarah Chen>Priya finishes the dashboard by August 8th and owns the accessibility audit report by August 5th. Leila exports design tokens by tomorrow noon and updates onboarding emails by July 31st.</v>
+
+25
+00:03:01.300 --> 00:03:08.700
+<v Sarah Chen>Tom fixes the rate-limit performance regression by July 21st and sets up feature flags by July 24th. Does everyone have their items?</v>
+
+26
+00:03:09.000 --> 00:03:11.200
+<v Tom Adeyemi>Yep, all clear.</v>
+
+27
+00:03:11.500 --> 00:03:13.000
+<v Priya Nair>Got it.</v>
+
+28
+00:03:13.300 --> 00:03:14.800
+<v Marcus Webb>Confirmed.</v>
+
+29
+00:03:15.100 --> 00:03:16.500
+<v Leila Hassan>All good.</v>
+
+30
+00:03:16.800 --> 00:03:21.000
+<v Sarah Chen>Perfect. Let's sync again mid-week. Thanks everyone.</v>

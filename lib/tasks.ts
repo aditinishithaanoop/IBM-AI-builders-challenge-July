@@ -1,6 +1,8 @@
 import { Task, TaskScore, TaskStatus } from '@/types/task';
 
-// In-memory store — reset on server restart
+// Persist the array on the Node.js global so it survives Next.js hot-reloads
+// in development (where modules are re-evaluated but the process stays alive).
+// In production there are no hot-reloads, so this is a no-op.
 declare global {
   var __tasks: Task[] | undefined;
 }
@@ -11,6 +13,7 @@ export function getTasks(): Task[] {
   return tasks;
 }
 
+/** Generates id and createdAt automatically; caller supplies everything else. */
 export function addTask(task: Omit<Task, 'id' | 'createdAt'>): Task {
   const newTask: Task = {
     ...task,
@@ -21,10 +24,16 @@ export function addTask(task: Omit<Task, 'id' | 'createdAt'>): Task {
   return newTask;
 }
 
+/** Returns null when no task with that id exists. */
 export function getTask(id: string): Task | null {
   return tasks.find((t) => t.id === id) ?? null;
 }
 
+/**
+ * Merges `updates` into the matching task in-place.
+ * Returns the updated task, or null if the id was not found.
+ * `source`, `id`, and `createdAt` are intentionally not patchable here.
+ */
 export function updateTask(
   id: string,
   updates: Partial<Pick<Task, 'title' | 'description' | 'status' | 'assignedTo' | 'deadline' | 'deadlineTime' | 'effort' | 'impact' | 'rank' | 'reasoning'>>
@@ -35,6 +44,7 @@ export function updateTask(
   return tasks[index];
 }
 
+/** Returns false when no task with that id exists. */
 export function deleteTask(id: string): boolean {
   const index = tasks.findIndex((t) => t.id === id);
   if (index === -1) return false;
