@@ -1,17 +1,14 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import { addTask } from '@/lib/tasks';
-import type { Task, TaskScore } from '@/types/task';
+import type { ProposedTask } from '@/types/task';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-interface ExtractedTask {
-  title: string;
-  description?: string;
-  assignedTo?: string[];
-  deadline?: string;
-  deadlineTime?: string;
-}
+// Shape of each action item the model is asked to return
 
+
+// POST /api/meeting-to-action
+// Accepts { transcript } → calls Gemini to extract action items → persists them
+// with source="meeting" → returns { created, skipped }
 export async function POST(request: Request): Promise<Response> {
   const body = await request.json() as { transcript?: string };
 
@@ -19,7 +16,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'transcript is required' }, { status: 400 });
   }
 
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0]; // anchor for resolving relative dates
 
   const prompt = `You are an assistant that extracts action items from meeting transcripts. Today's date is ${today}.
 
@@ -59,15 +56,15 @@ ${body.transcript}
     },
   });
 
-  let extracted: ExtractedTask[];
+  let extracted: ProposedTask[];
   try {
     extracted = JSON.parse(response.text ?? '[]');
   } catch {
     return Response.json({ error: 'Failed to parse AI response' }, { status: 502 });
   }
 
-  const created: Task[] = [];
-  const skipped: { item: ExtractedTask; reason: string }[] = [];
+  const valid: ProposedTask[] = [];
+  const skipped: { item: ProposedTask; reason: string }[] = []; // items the model returned but we couldn't save
 
   for (const item of extracted) {
     if (!item.title || typeof item.title !== 'string') {
@@ -80,21 +77,11 @@ ${body.transcript}
       continue;
     }
     if (item.deadlineTime !== undefined && !item.deadline) {
-      // drop the stray time rather than reject the whole task
+      // Model returned a time but no date — drop the time rather than reject the whole task
       delete item.deadlineTime;
     }
-
-    const task = addTask({
-      title: item.title,
-      status: 'todo',
-      source: 'meeting',
-      ...(item.description !== undefined && { description: item.description }),
-      ...(item.assignedTo !== undefined && { assignedTo: item.assignedTo }),
-      ...(item.deadline !== undefined && { deadline: item.deadline }),
-      ...(item.deadlineTime !== undefined && { deadlineTime: item.deadlineTime }),
-    });
-    created.push(task);
+    valid.push(item)
   }
 
-  return Response.json({ created, skipped });
+  return Response.json({ extracted: valid, skipped });
 }

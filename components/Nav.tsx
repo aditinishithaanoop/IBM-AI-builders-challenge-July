@@ -3,27 +3,46 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+// Top-level navigation entries; add new pages here to have them appear in the nav
 const LINKS = [
-  { href: '/', label: 'Dashboard' },
-  { href: '/meeting', label: 'Meeting → Action Items' },
-  { href: '/proposal', label: 'Proposal Analyser' },
+  { href: '/', label: 'Dashboard', color: 'brand' },
+  { href: '/meeting', label: 'Meeting to Action', color: 'meeting' },
+  { href: '/proposal', label: 'Proposal Analyser', color: 'proposal' },
 ];
+
+const ACTIVE_STYLES: Record<string, string> = {
+   brand: 'bg-brand/15 text-brand',
+   meeting: 'bg-meeting/15 text-meeting',
+   proposal: 'bg-proposal/15 text-proposal',
+};
 
 export default function Nav() {
   const pathname = usePathname();
 
   return (
-    <nav className="print:hidden border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-      <div className="mx-auto max-w-5xl px-4 sm:px-8 py-3 flex items-center gap-6">
-        <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">AI Project Co-worker</span>
-        <div className="flex gap-4">
+    <nav className="print:hidden border-b border-border bg-surface">
+      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
+          <div className="flex gap-1.5 py-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-brand" />
+            <span className="h-2.5 w-2.5 rounded-full bg-meeting" />
+            <span className="h-2.5 w-2.5 rounded-full bg-proposal" />
+          </div>
+        <span className="font-display text-xl font-medium text-foreground leading-tight">
+            AI Project Co-worker</span>
+        </div>
+        <div className="flex gap-2">
           {LINKS.map((l) => {
             const active = pathname === l.href;
             return (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`text-sm ${active ? 'text-zinc-900 dark:text-zinc-100 font-medium' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
+                className={`text-sm px-3 py-1.5 rounded-full transition-colors ${
+                  active
+                    ? `${ACTIVE_STYLES[l.color]} font-medium`
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background'
+                }`}
               >
                 {l.label}
               </Link>

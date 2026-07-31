@@ -1,10 +1,6 @@
 import { addTask } from '@/lib/tasks';
 import type { Task, ProposedTask } from '@/types/task';
 
-// POST /api/proposal-to-tasks
-// Accepts the proposedTasks array from a ProposalAnalysis and commits the user's
-// chosen subset to the store with source="proposal".
-// Called after the user reviews the analysis and clicks "Add to Backlog".
 export async function POST(request: Request): Promise<Response> {
   const body = await request.json() as { tasks?: ProposedTask[] };
 
@@ -26,14 +22,13 @@ export async function POST(request: Request): Promise<Response> {
       continue;
     }
     if (item.deadlineTime !== undefined && !item.deadline) {
-      // Drop the stray time rather than reject the whole task
       delete item.deadlineTime;
     }
 
     const task = addTask({
       title: item.title,
       status: 'todo',
-      source: 'proposal',
+      source: 'meeting',
       ...(item.description !== undefined && { description: item.description }),
       ...(item.assignedTo !== undefined && { assignedTo: item.assignedTo }),
       ...(item.deadline !== undefined && { deadline: item.deadline }),
