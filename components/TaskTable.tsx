@@ -213,7 +213,7 @@ export default function TaskTable() {
           </button>
           <button
             onClick={() => { setOpen(true); setError(null); }}
-            className="rounded-md bg-brand-hover border-border px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover/65 transition-colors"
+            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
           >
             + Add Task
           </button>
