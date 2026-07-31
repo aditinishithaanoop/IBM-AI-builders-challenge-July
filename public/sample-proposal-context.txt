@@ -1,0 +1,45 @@
+PROJECT CONTEXT — Orion Platform (for use in the "Project context" field)
+
+Team size and structure
+  - 5-person platform engineering team: Sarah Chen (Lead), Marcus Webb, Priya Nair,
+    Tom Adeyemi, Leila Hassan.
+  - No dedicated DevOps or SRE headcount — platform engineers share on-call duties.
+  - One contractor (Inclusiv Consulting) engaged for accessibility work until end of August.
+
+Current sprint commitments (already in backlog)
+  - Marcus: chasing security audit sign-off (blocked), co-writing DB migration runbook (due Jul 28)
+  - Tom: API rate-limit performance fix (due Jul 21), feature flag infrastructure (due Jul 24)
+  - Priya: dashboard UI implementation (due Aug 8), accessibility audit coordination (due Aug 5)
+  - Leila: design token export (due Jul 18), onboarding email rebrand (due Jul 31)
+
+Tech stack
+  - Backend: Node.js microservices (6 services) on AWS ECS Fargate
+  - Message queue: RabbitMQ (self-managed on EC2)
+  - Frontend: Next.js 15, deployed on Vercel
+  - Database: PostgreSQL 15 (RDS), with a pending schema migration for the Orion relaunch
+  - CI/CD: GitHub Actions; infrastructure managed via Terraform
+
+Existing observability tools (context for the proposal)
+  - Metrics: Datadog (Pro, 18 seats) — ~$2,700/month
+  - Logs: self-hosted ELK stack (18 EC2 nodes) — ~$3,200/month infrastructure cost
+  - Alerting / on-call: PagerDuty (Team plan) — included in Datadog bundle
+  - Distributed tracing: NOT currently implemented
+
+Strategic priorities for this quarter
+  1. Ship the Orion platform relaunch by August 31st — this is the team's primary goal
+     and overrides all other work if there is a conflict.
+  2. Reduce infrastructure spend to stay within the revised annual budget (headcount
+     costs rose 15% after two senior hires in Q2).
+  3. Close the compliance gap flagged by legal: GDPR data-residency review for all
+     third-party SaaS tools is due to the board by August 1st.
+
+Constraints and flags
+  - No team member should be assigned more than two high-priority items simultaneously
+    given the August 31st hard deadline.
+  - Any tooling changes that touch production alerting must include a two-week parallel
+    run — this is a firm engineering policy after an incident in March 2025.
+  - Budget approval requires sign-off from both Sarah Chen (Engineering Director) and
+    Finance; Finance is on a two-week freeze from July 21st to August 4th — any
+    approvals needing Finance sign-off must be submitted before July 21st.
+  - The team is distributed across UTC+0 (Leila), UTC+1 (Marcus, Sarah), and UTC+5:30
+    (Priya) — synchronous meetings are limited to 09:00–11:00 UTC.

@@ -1,0 +1,126 @@
+PROPOSAL: Migration to a Unified Observability Stack
+Submitted by: Marcus Webb, Platform Engineering Lead
+Date: 2025-07-17
+Version: 1.2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. EXECUTIVE SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This proposal recommends replacing our current fragmented monitoring setup
+(three separate tools: Datadog for metrics, a self-hosted ELK stack for logs,
+and PagerDuty for alerting) with a unified observability stack built on
+Grafana Cloud. The migration would consolidate metrics, logs, and traces into
+a single pane of glass, reduce per-seat licensing costs by an estimated 40%,
+and eliminate the operational overhead of maintaining a self-hosted Elasticsearch
+cluster.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. PROBLEM STATEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2.1 Fragmentation
+Engineers currently context-switch between three dashboards during an incident.
+This adds cognitive overhead during high-pressure situations and has contributed
+to a 12-minute average increase in mean time to resolve (MTTR) incidents compared
+to teams running unified observability tooling (internal benchmark, Q1 2025).
+
+2.2 Cost Overrun
+The self-hosted ELK cluster has grown to 18 nodes and is consuming approximately
+$3,200/month in EC2 costs alone, plus 0.5 FTE of platform engineering time for
+maintenance patches and capacity planning. Datadog licensing adds $2,700/month
+at current seat count. Combined observability spend is ~$70,800/year.
+
+2.3 Coverage Gaps
+Distributed tracing is not currently implemented. When a request spans multiple
+services, engineers must manually correlate log timestamps across services, which
+is error-prone and slow. This gap has been flagged in three consecutive quarterly
+engineering retrospectives.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. PROPOSED SOLUTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Adopt Grafana Cloud (Pro tier) as our single observability platform, integrating:
+
+  - Grafana Mimir       → replace Datadog metrics ingestion
+  - Grafana Loki        → replace self-hosted ELK for log aggregation
+  - Grafana Tempo       → add distributed tracing (currently absent)
+  - Grafana OnCall      → replace PagerDuty for alerting and on-call scheduling
+  - OpenTelemetry SDK   → instrument all services for traces and structured logs
+
+Estimated all-in cost at current scale: ~$2,800/month, a saving of ~$3,100/month
+($37,200/year) versus today's spend, while adding tracing coverage we do not
+currently have.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. IMPLEMENTATION PLAN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Phase 1 — Proof of Concept (Owner: Marcus Webb, by 2025-08-01)
+  - Provision a Grafana Cloud Pro trial workspace
+  - Mirror 10% of production metrics and logs in parallel with existing tools
+  - Validate alert parity: ensure every existing Datadog alert has an equivalent
+    in Grafana Alertmanager
+
+Phase 2 — Instrumentation (Owner: Tom Adeyemi, by 2025-08-22)
+  - Add OpenTelemetry SDK to all six backend services
+  - Emit structured logs and trace spans for all API endpoints
+  - Ensure trace IDs are propagated through the message queue (RabbitMQ)
+  - Target: 100% of services instrumented before cutover
+
+Phase 3 — Dashboard & Alert Migration (Owner: Priya Nair, by 2025-09-05)
+  - Recreate all 14 existing Datadog dashboards in Grafana
+  - Migrate on-call schedules from PagerDuty to Grafana OnCall
+  - Conduct a tabletop incident exercise to validate the new alert routing
+
+Phase 4 — Cutover & Decommission (Owner: Marcus Webb, by 2025-09-19)
+  - Switch DNS and metric forwarding to Grafana Cloud exclusively
+  - Drain and decommission all 18 ELK cluster nodes
+  - Cancel Datadog and PagerDuty subscriptions
+  - Deadline: decommission must complete before the September billing cycle closes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. RISKS AND MITIGATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Risk 1: Alert gap during migration
+  Mitigation: Run old and new alerting in parallel during Phase 2 and 3.
+  No cutover until a two-week parallel run shows zero missed alerts.
+
+Risk 2: Engineer learning curve on Grafana
+  Mitigation: Priya Nair to deliver a 90-minute hands-on workshop for the
+  engineering team by 2025-08-15.
+
+Risk 3: Data retention compliance (GDPR / ISO 27001)
+  Mitigation: Grafana Cloud stores data in eu-west-1 by default. Confirm with
+  the legal team that this satisfies our current data residency obligations before
+  Phase 1 cutover. This review must be completed by 2025-07-31.
+
+Risk 4: Grafana OnCall feature parity with PagerDuty
+  Mitigation: Leila Hassan to produce a feature comparison document covering
+  escalation policies, integrations, and mobile app by 2025-07-28. If gaps are
+  identified, scope a parallel PagerDuty retention plan.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. BUDGET & APPROVAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Projected first-year net saving: $37,200
+One-time migration effort estimate: ~3 FTE-weeks across the platform team
+Approval required from: Engineering Director (Sarah Chen) and Finance
+
+This proposal requests formal sign-off by 2025-07-24 to allow Phase 1 to begin
+on schedule. If sign-off is delayed beyond July 24th, the Phase 4 decommission
+date will slip and we will incur at least one additional month of duplicate
+tooling costs (~$5,900).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. RECOMMENDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+We recommend approving this proposal. The cost savings are significant and
+well-documented, the migration risk is manageable with the proposed parallel-run
+approach, and the addition of distributed tracing addresses a gap that has been
+flagged repeatedly. The main prerequisite is early legal sign-off on data
+residency to avoid blocking Phase 1.
