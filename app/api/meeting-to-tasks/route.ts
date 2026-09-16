@@ -1,7 +1,13 @@
 import { addTask } from '@/lib/tasks';
+import { requireOrgSession } from '@/lib/session';
 import type { Task, ProposedTask } from '@/types/task';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request): Promise<Response> {
+  const ctx = await requireOrgSession();
+  if (!ctx) return Response.json({ error: 'unauthorized' }, { status: 401 });
+
   const body = await request.json() as { tasks?: ProposedTask[] };
 
   if (!body.tasks || !Array.isArray(body.tasks)) {
@@ -25,7 +31,7 @@ export async function POST(request: Request): Promise<Response> {
       delete item.deadlineTime;
     }
 
-    const task = addTask({
+    const task = await addTask(ctx.organizationId, ctx.userId, {
       title: item.title,
       status: 'todo',
       source: 'meeting',

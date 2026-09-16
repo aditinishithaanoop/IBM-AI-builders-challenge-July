@@ -1,20 +1,21 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { getTasks, updateTask } from '@/lib/tasks';
+import { requireOrgSession } from '@/lib/session';
+
+export const dynamic = 'force-dynamic';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// POST /api/prioritize
-// Sends every task (title, description, effort, impact, deadline) to Gemini,
-// receives a rank + one-sentence reasoning per task, then writes them back via
-// updateTask. The client re-fetches /api/tasks afterward to see the new ranks.
 export async function POST(): Promise<Response> {
-  const tasks = getTasks();
+  const ctx = await requireOrgSession();
+  if (!ctx) return Response.json({ error: 'unauthorized' }, { status: 401 });
+
+  const tasks = await getTasks(ctx.organizationId);
 
   if (tasks.length === 0) {
     return Response.json({ error: 'No tasks to prioritize' }, { status: 400 });
   }
 
-  // Strip down to only the fields that are relevant to prioritisation
   const taskSummaries = tasks.map((t) => ({
     id: t.id,
     title: t.title,
@@ -59,9 +60,8 @@ Return your ranking for every task id given.`;
     return Response.json({ error: 'Failed to parse AI response' }, { status: 502 });
   }
 
-  // Write rank + reasoning back into the store; client-side sort uses rank
   for (const r of results) {
-    updateTask(r.id, { rank: r.rank, reasoning: r.reasoning });
+    await updateTask(ctx.organizationId, r.id, { rank: r.rank, reasoning: r.reasoning });
   }
 
   return Response.json({ success: true, count: results.length });

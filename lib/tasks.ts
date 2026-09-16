@@ -1,56 +1,90 @@
-import { Task, TaskScore, TaskStatus } from '@/types/task';
+import { prisma } from '@/lib/prisma';
+import type { Task, TaskScore, TaskStatus, TaskSource } from '@/types/task';
 
-// Persist the array on the Node.js global so it survives Next.js hot-reloads
-// in development (where modules are re-evaluated but the process stays alive).
-// In production there are no hot-reloads, so this is a no-op.
-declare global {
-  var __tasks: Task[] | undefined;
-}
-
-const tasks: Task[] = globalThis.__tasks ?? (globalThis.__tasks = []);
-
-export function getTasks(): Task[] {
-  return tasks;
-}
-
-/** Generates id and createdAt automatically; caller supplies everything else. */
-export function addTask(task: Omit<Task, 'id' | 'createdAt'>): Task {
-  const newTask: Task = {
-    ...task,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
+// Prisma stores status/source as plain strings (no DB-level enum) —
+// app-layer validation in the routes is what keeps these honest, same as before.
+function toTask(row: {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  source: string;
+  assignedTo: string[];
+  deadline: string | null;
+  deadlineTime: string | null;
+  effort: number | null;
+  impact: number | null;
+  rank: number | null;
+  reasoning: string | null;
+  createdAt: Date;
+}): Task {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? undefined,
+    status: row.status as TaskStatus,
+    source: row.source as TaskSource,
+    assignedTo: row.assignedTo.length > 0 ? row.assignedTo : undefined,
+    deadline: row.deadline ?? undefined,
+    deadlineTime: row.deadlineTime ?? undefined,
+    effort: (row.effort ?? undefined) as TaskScore | undefined,
+    impact: (row.impact ?? undefined) as TaskScore | undefined,
+    rank: row.rank ?? undefined,
+    reasoning: row.reasoning ?? undefined,
+    createdAt: row.createdAt.toISOString(),
   };
-  tasks.push(newTask);
-  return newTask;
 }
 
-/** Returns null when no task with that id exists. */
-export function getTask(id: string): Task | null {
-  return tasks.find((t) => t.id === id) ?? null;
+export async function getTasks(organizationId: string): Promise<Task[]> {
+  const rows = await prisma.task.findMany({ where: { organizationId } });
+  return rows.map(toTask);
 }
 
-/**
- * Merges `updates` into the matching task in-place.
- * Returns the updated task, or null if the id was not found.
- * `source`, `id`, and `createdAt` are intentionally not patchable here.
- */
-export function updateTask(
+export async function getTask(organizationId: string, id: string): Promise<Task | null> {
+  const row = await prisma.task.findFirst({ where: { id, organizationId } });
+  return row ? toTask(row) : null;
+}
+
+export async function addTask(
+  organizationId: string,
+  createdById: string,
+  task: Omit<Task, 'id' | 'createdAt'>
+): Promise<Task> {
+  const row = await prisma.task.create({
+    data: {
+      title: task.title,
+      status: task.status,
+      source: task.source,
+      organizationId,
+      createdById,
+      ...(task.description !== undefined && { description: task.description }),
+      ...(task.assignedTo !== undefined && { assignedTo: task.assignedTo }),
+      ...(task.deadline !== undefined && { deadline: task.deadline }),
+      ...(task.deadlineTime !== undefined && { deadlineTime: task.deadlineTime }),
+      ...(task.effort !== undefined && { effort: task.effort }),
+      ...(task.impact !== undefined && { impact: task.impact }),
+      ...(task.rank !== undefined && { rank: task.rank }),
+      ...(task.reasoning !== undefined && { reasoning: task.reasoning }),
+    },
+  });
+  return toTask(row);
+}
+
+export async function updateTask(
+  organizationId: string,
   id: string,
   updates: Partial<Pick<Task, 'title' | 'description' | 'status' | 'assignedTo' | 'deadline' | 'deadlineTime' | 'effort' | 'impact' | 'rank' | 'reasoning'>>
-): Task | null {
-  const index = tasks.findIndex((t) => t.id === id);
-  if (index === -1) return null;
-  tasks[index] = { ...tasks[index], ...updates };
-  return tasks[index];
+): Promise<Task | null> {
+  const existing = await prisma.task.findFirst({ where: { id, organizationId } });
+  if (!existing) return null;
+
+  const row = await prisma.task.update({ where: { id }, data: updates });
+  return toTask(row);
 }
 
-/** Returns false when no task with that id exists. */
-export function deleteTask(id: string): boolean {
-  const index = tasks.findIndex((t) => t.id === id);
-  if (index === -1) return false;
-  tasks.splice(index, 1);
-  return true;
+export async function deleteTask(organizationId: string, id: string): Promise<boolean> {
+  const { count } = await prisma.task.deleteMany({ where: { id, organizationId } });
+  return count > 0;
 }
 
-// Re-export types so callers can import from one place if needed
 export type { Task, TaskScore, TaskStatus };

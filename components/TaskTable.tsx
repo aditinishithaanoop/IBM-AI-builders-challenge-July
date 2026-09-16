@@ -10,6 +10,8 @@ import { ErrorBanner, EmptyState } from '@/components/StatusMessage';
 
 const STATUSES: TaskStatus[] = ['todo', 'in-progress', 'done', 'blocked'];
 const SCORES: TaskScore[] = [1, 2, 3, 4, 5];
+const AUTH_RETRY_ATTEMPTS = 5;
+const AUTH_RETRY_DELAY_MS = 600;
 
 // Tailwind classes for each status chip — keeps the JSX clean
 const STATUS_BADGE: Record<TaskStatus, string> = {
@@ -81,16 +83,36 @@ export default function TaskTable() {
   // ── fetch ──────────────────────────────────────────────────────────────────
   const fetchTasks = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/tasks');
-      if (!res.ok) throw new Error('Failed to load tasks');
-      setTasks(await res.json());
+      for (let attempt = 1; attempt <= AUTH_RETRY_ATTEMPTS; attempt += 1) {
+        const res = await fetch('/api/tasks');
+
+        if (res.ok) {
+          setTasks(await res.json());
+          return;
+        }
+
+        if (res.status !== 401 || attempt === AUTH_RETRY_ATTEMPTS) {
+          const json = await res.json().catch(() => ({}));
+          throw new Error(
+            (json as { error?: string }).error ?? 'Failed to load tasks'
+          );
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load tasks');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchTasks(); }, [fetchTasks]);
+  useEffect(() => {
+    const timeout = setTimeout(() => { void fetchTasks(); }, 0);
+    return () => clearTimeout(timeout);
+  }, [fetchTasks]);
 
   // focus first field when modal opens
   useEffect(() => {
@@ -241,7 +263,7 @@ export default function TaskTable() {
             ) : tasks.length === 0 ? (
               <tr>
                 <td colSpan={COLS.length} className="p-0">
-                  <EmptyState message="No tasks yet - add one above." />
+                  {error ? <ErrorBanner message={error} /> : <EmptyState message="No tasks yet - add one above." />}
                 </td>
               </tr>
             ) : (

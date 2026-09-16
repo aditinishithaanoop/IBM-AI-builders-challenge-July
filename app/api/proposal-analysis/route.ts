@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { getTasks } from '@/lib/tasks';
+import { requireOrgSession } from '@/lib/session';
 import type { ProposalAnalysis } from '@/types/task';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -9,6 +10,9 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 // against the current backlog → returns a ProposalAnalysis (does NOT create tasks;
 // that is a separate step via POST /api/proposal-to-tasks).
 export async function POST(request: Request): Promise<Response> {
+  const ctx = await requireOrgSession();
+  if (!ctx) return Response.json({ error: 'unauthorized' }, { status: 401 });
+
   const body = await request.json() as { proposalText?: string; projectContext?: string };
 
   if (!body.proposalText || typeof body.proposalText !== 'string' || !body.proposalText.trim()) {
@@ -18,7 +22,7 @@ export async function POST(request: Request): Promise<Response> {
   const today = new Date().toISOString().split('T')[0]; // anchor for resolving relative dates
 
   // Give the model awareness of what's already in flight so it avoids duplicates
-  const currentBacklog = getTasks().map((t) => ({
+  const currentBacklog = (await getTasks(ctx.organizationId)).map((t) => ({
     title: t.title,
     status: t.status,
     assignedTo: t.assignedTo ?? [],
@@ -107,4 +111,3 @@ ${body.proposalText}
 
   return Response.json({ ...analysis, filteredCount });
 }
-

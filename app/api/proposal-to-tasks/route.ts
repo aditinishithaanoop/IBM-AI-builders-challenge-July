@@ -1,11 +1,13 @@
 import { addTask } from '@/lib/tasks';
+import { requireOrgSession } from '@/lib/session';
 import type { Task, ProposedTask } from '@/types/task';
 
-// POST /api/proposal-to-tasks
-// Accepts the proposedTasks array from a ProposalAnalysis and commits the user's
-// chosen subset to the store with source="proposal".
-// Called after the user reviews the analysis and clicks "Add to Backlog".
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request): Promise<Response> {
+  const ctx = await requireOrgSession();
+  if (!ctx) return Response.json({ error: 'unauthorized' }, { status: 401 });
+
   const body = await request.json() as { tasks?: ProposedTask[] };
 
   if (!body.tasks || !Array.isArray(body.tasks)) {
@@ -26,11 +28,10 @@ export async function POST(request: Request): Promise<Response> {
       continue;
     }
     if (item.deadlineTime !== undefined && !item.deadline) {
-      // Drop the stray time rather than reject the whole task
       delete item.deadlineTime;
     }
 
-    const task = addTask({
+    const task = await addTask(ctx.organizationId, ctx.userId, {
       title: item.title,
       status: 'todo',
       source: 'proposal',

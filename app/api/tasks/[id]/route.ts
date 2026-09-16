@@ -1,13 +1,18 @@
 import { getTask, updateTask, deleteTask } from '@/lib/tasks';
+import { requireOrgSession } from '@/lib/session';
 import type { Task, TaskScore } from '@/types/task';
+
+export const dynamic = 'force-dynamic';
 
 const VALID_SCORES: TaskScore[] = [1, 2, 3, 4, 5];
 
-// PATCH /api/tasks/:id — partial update; source, id, and createdAt cannot be changed
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
+  const ctx = await requireOrgSession();
+  if (!ctx) return Response.json({ error: 'unauthorized' }, { status: 401 });
+
   const { id } = await params;
   const body = await request.json() as Partial<Pick<Task, 'title' | 'description' | 'status' | 'assignedTo' | 'deadline' | 'deadlineTime' | 'effort' | 'impact'>>;
 
@@ -25,30 +30,30 @@ export async function PATCH(
     return Response.json({ error: 'impact must be 1–5' }, { status: 400 });
   }
 
-  // Fetch early so we can validate deadlineTime against the persisted deadline
-  const existing = getTask(id);
+  const existing = await getTask(ctx.organizationId, id);
   if (!existing) {
     return Response.json({ error: 'task not found' }, { status: 404 });
   }
-  // Reject a time-only update when neither the patch nor the stored task has a date
   if (body.deadlineTime !== undefined && !body.deadline && !existing.deadline) {
     return Response.json({ error: 'deadlineTime requires a deadline' }, { status: 400 });
   }
 
-  const updated = updateTask(id, body);
+  const updated = await updateTask(ctx.organizationId, id, body);
   if (!updated) {
     return Response.json({ error: 'task not found' }, { status: 404 });
   }
   return Response.json(updated);
 }
 
-// DELETE /api/tasks/:id — returns 204 No Content on success
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
+  const ctx = await requireOrgSession();
+  if (!ctx) return Response.json({ error: 'unauthorized' }, { status: 401 });
+
   const { id } = await params;
-  const success = deleteTask(id);
+  const success = await deleteTask(ctx.organizationId, id);
   if (!success) {
     return Response.json({ error: 'task not found' }, { status: 404 });
   }

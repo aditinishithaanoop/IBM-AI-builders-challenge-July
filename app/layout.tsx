@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import Nav from "@/components/Nav";
+import AuthSessionSync from "@/components/AuthSessionSync";
 import "./globals.css";
 import DynamicDots from "@/components/DynamicDots";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <DynamicDots />
         <Nav />
+        <AuthSessionSync />
         {children}
       </body>
     </html>
